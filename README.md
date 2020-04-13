@@ -27,7 +27,9 @@ following steps are required:
 
 1.  Add a stanza to the beginning of the script that explains very brief the
     purpose and add information about the year of writing, the author and the
-    licence. Only FLOSS licences are allowed.
+    licence. Only FLOSS licences are allowed. Licence names are abbreviated in
+    the script header to the file name found in the [licences](licence)
+    directory.
 2.  Add a directory for your script in the respective category with a README.md
     that explains dependencies and usage.
 3.  Link the README from this file.
