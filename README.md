@@ -31,4 +31,9 @@ following steps are required:
 2.  Add a directory for your script in the respective category with a README.md
     that explains dependencies and usage.
 3.  Link the README from this file.
-4.  The command-line will never be the same for us! :-)
+4.  Commit with a meaningful message: a short line mentioning your change and a
+    longer paragraph below giving details. Please use the `git log` as an
+    example.
+5.  The command-line will never be the same for us! :-)
+
+You can have a look at the existing scripts if in doubt.
