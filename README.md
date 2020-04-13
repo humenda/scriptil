@@ -11,6 +11,10 @@ utilities to speed up workflows on the command-line. Scripts are categorised and
 Contents
 --------
 
+### File Conversion
+
+-   [LOview — view any file format that Libreoffice can open within your editor](file_conversion/loview/README.md)
+
 * * * * *
 
 
