@@ -18,13 +18,25 @@ ToDo:
 
 import os
 import shlex
+import subprocess
 import sys
 
-def execute(command):
-    ret = os.system(command)
-    if ret > 0:
-        print(f"Error while executing {command}")
+def execute(command, communication=True):
+    text = ''
+    if communication:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Libreoffice does not use error codes properly, look for "error"
+        text = '\n'.join([t.decode(sys.getdefaultencoding())
+            for t in proc.communicate() if t])
+    else:
+        proc = subprocess.Popen(command)
+    ret = proc.wait()
+    if 'error' in text or 'Error' in text or ret > 0:
+        print(f"Error while executing: {command}")
+        if text:
+            print('   ', text.replace('\n', '\n    ').rstrip())
         sys.exit(38)
+    return text
 
 def get_editor():
     if os.environ.get('EDITOR'):
@@ -46,12 +58,15 @@ document_path = os.path.basename(document_path)
 
 basename, extension = os.path.splitext(document_path)
 intermediate_html = None
-print('EXT',extension)
 if len(extension) >= 2 and len(extension) < 5:
     intermediate_html = f'{basename}.html'
 else:
     intermediate_html = f'{basename}.html'
 
-execute(f"libreoffice --convert-to html '{document_path}'")
-execute(f"pandoc -t markdown '{intermediate_html}' 2>&1 | {get_editor()} -")
+execute(["libreoffice", "--convert-to", "html", document_path])
+text = execute(["pandoc", "-t", "markdown", intermediate_html])
+intermediate_text = intermediate_html + '.md'
+with open(intermediate_text, 'w') as file:
+    file.write(text)
+execute([get_editor(), intermediate_text], communication=False)
 os.remove(intermediate_html)
