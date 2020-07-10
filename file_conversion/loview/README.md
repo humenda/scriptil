@@ -10,7 +10,7 @@ Dependencies
 
 Python 3, Libreoffice and Pandoc.
 
-i-  Debian: `sudo apt install libreoffice-common pandoc python3`
+-  Debian: `sudo apt install libreoffice-common pandoc python3`
     -   Install `libre-office-calc` (or impress or writer) for the corresponding
         file format support.
 
@@ -19,3 +19,22 @@ Example Usage
 
     $ loview important_letter.docx
     $ loview boring_presentation.odp
+
+Configuration
+-------------
+
+LOview can be configured by environment variables:
+
+### `EDITOR`
+
+Set the editor to use. If not set, the editor for viewing the Markdown file will
+be guessed.
+
+### `LOVIEW_CONF`
+
+Set LOview-specific configuration. Keys and values are separated by a colon,
+multiple key/value pairs are separated by commas.
+
+| Key       | Value                         |
+| --------- | ----------------------------- |
+| linewidth | Number of columns per line    |

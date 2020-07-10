@@ -11,15 +11,60 @@ converts to Markdown and views it in Vim.
 By setting the environment variable $EDITOR, you can select your favourite
 editor. Defaults to vim.
 
+There is also a rudimentary configuration (environment) variable called `LOVIEW_CONF`. At the
+moment, the only value that can be specified is `linewidth`. The configuration could look like this:
+
+        LOVIEW_CONF=linewidth:80
+
 ToDo:
 
 -   allow to view the HTML file straight in a (text) browser to preserve tables
 """
 
+import atexit
 import os
 import shlex
 import subprocess
 import sys
+
+# This is not thread-safe
+TEMPORARY_FILES = []
+DEFAULT_CONF = {
+        "linewidth": "80",
+    }
+
+def read_config():
+    """Read the configuration from the LOVIEW_CONF variable. Return a dictionary with the parsed
+    values."""
+    conf_vals = dict(DEFAULT_CONF)
+    if "LOVIEW_CONF" in os.environ:
+        for item in os.environ["LOVIEW_CONF"].split(","):
+            try:
+                key, val = item.split(":")
+            except ValueError:
+                print("Invalid configuration syntax in LOVIEW_CONF environment variable: {item}")
+                print("Expected KEY:VALUE")
+                sys.exit(82)
+            conf_vals[key] = val
+    return conf_vals
+
+
+def remove_temporary_files():
+    """Remove temporary files in case of a crash or premature termination. This is not
+    thread-safe.
+    This is a callback function intended to be registered with atexit."""
+    for file in TEMPORARY_FILES:
+        try:
+            os.remove(file)
+            tmp_dir = os.path.dirname(os.path.abspath(file))
+            # Try to remove any images. LO puts them usually right next to the converted files.
+            basename = os.path.splitext(os.path.basename(file))[0]
+            images = [img for img in os.listdir('.')
+                  if img.startswith(basename) and img.endswith('jpg')]
+            for image in images:
+                os.remove(image)
+        except OSError:
+            pass
 
 def execute(command, communication=True):
     text = ''
@@ -45,28 +90,38 @@ def get_editor():
         return 'nano'
     return 'vim'
 
-if not len(sys.argv) > 1:
-    print("Must provide a file as argument")
-    sys.exit(42)
+def main():
+    """Script entry point."""
+    if not len(sys.argv) > 1:
+        print("Must provide a file as argument")
+        sys.exit(42)
 
-document_path = sys.argv[1]
-document_dir = os.path.dirname(document_path)
-if document_dir:
-    # libreoffice has strange --output-dir rules, change cwd
-    os.chdir(document_dir)
-document_path = os.path.basename(document_path)
+    atexit.register(remove_temporary_files)
 
-basename, extension = os.path.splitext(document_path)
-intermediate_html = None
-if len(extension) >= 2 and len(extension) < 5:
-    intermediate_html = f'{basename}.html'
-else:
-    intermediate_html = f'{basename}.html'
+    conf = read_config()
 
-execute(["libreoffice", "--convert-to", "html", document_path])
-text = execute(["pandoc", "-t", "markdown", intermediate_html])
-intermediate_text = intermediate_html + '.md'
-with open(intermediate_text, 'w') as file:
-    file.write(text)
-execute([get_editor(), intermediate_text], communication=False)
-os.remove(intermediate_html)
+    document_path = sys.argv[1]
+    document_dir = os.path.dirname(document_path)
+    if document_dir:
+        # libreoffice has strange --output-dir rules, change cwd
+        os.chdir(document_dir)
+    document_path = os.path.basename(document_path)
+
+    basename, extension = os.path.splitext(document_path)
+    intermediate_html = None
+    if len(extension) >= 2 and len(extension) < 5:
+        intermediate_html = f'{basename}.html'
+    else:
+        intermediate_html = f'{basename}.html'
+
+    TEMPORARY_FILES.append(intermediate_html)
+    execute(["libreoffice", "--convert-to", "html", document_path])
+    text = execute(["pandoc", "--columns", conf["linewidth"], "-t", "markdown", intermediate_html])
+    intermediate_md = intermediate_html + '.md'
+    TEMPORARY_FILES.append(intermediate_md)
+
+    with open(intermediate_md, 'w') as file:
+        file.write(text)
+    execute([get_editor(), intermediate_md], communication=False)
+
+main()
