@@ -29,7 +29,7 @@ def strip_unwantend_formatting(contents):
     return contents
 
 
-def reformat_md(document):
+def md_cleanup(document):
     """Take a document a s a string and perform all formatting changes defined
     in this module."""
     document = strip_unwantend_formatting(document)
@@ -46,7 +46,7 @@ def main():
     else:
         with open(sys.argv[1], encoding="UTF-8") as fhandle:
             text = fhandle.read()
-    text = reformat_md(text)
+    text = md_cleanup(text)
     print(text)
 
 if __name__ == '__main__':

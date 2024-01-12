@@ -3,7 +3,7 @@
 for Markup preservation.
 
 Author: Sebastian Humenda
-Licence: 2020, LGPL-3
+Licence: 2020-2024, LGPL-3
 
 This script uses Libreoffice and Pandoc to convert any format that Libreoffice
 converts to Markdown and views it in Vim.
@@ -26,6 +26,8 @@ import os
 import shlex
 import subprocess
 import sys
+
+import md_cleanup
 
 # This is not thread-safe
 TEMPORARY_FILES = []
@@ -116,12 +118,14 @@ def main():
 
     TEMPORARY_FILES.append(intermediate_html)
     execute(["libreoffice", "--convert-to", "html", document_path])
-    text = execute(["pandoc", "--columns", conf["linewidth"], "-t", "markdown", intermediate_html])
+    markdown_doc = execute(["pandoc", "--columns", conf["linewidth"], "-t", "markdown", intermediate_html])
+    markdown_doc = md_cleanup.md_cleanup(markdown_doc)
     intermediate_md = intermediate_html + '.md'
     TEMPORARY_FILES.append(intermediate_md)
 
     with open(intermediate_md, 'w') as file:
-        file.write(text)
+        file.write(markdown_doc)
     execute([get_editor(), intermediate_md], communication=False)
 
-main()
+if __name__ == '__main__':
+    main()
