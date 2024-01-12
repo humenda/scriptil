@@ -68,7 +68,12 @@ def remove_temporary_files():
         except OSError:
             pass
 
-def execute(command, communication=True):
+def execute(command, communication=True, scan_out_for_err=False):
+    """Execute a command, a thin wrapper around subprocess.call().
+    If `communication=True`, stdout will be returned.
+    Some programs like libreoffice do not use exit codes properly. The switch
+    `scan_out_for_err` scans the captured output for an error indication,
+    instead."""
     text = ''
     if communication:
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -78,7 +83,7 @@ def execute(command, communication=True):
     else:
         proc = subprocess.Popen(command)
     ret = proc.wait()
-    if 'error' in text or 'Error' in text or ret > 0:
+    if ret > 0 or (scan_out_for_err and ('error' in text or 'Error' in text)):
         print(f"Error while executing: {command}")
         if text:
             print('   ', text.replace('\n', '\n    ').rstrip())
@@ -117,7 +122,8 @@ def main():
         intermediate_html = f'{basename}.html'
 
     TEMPORARY_FILES.append(intermediate_html)
-    execute(["libreoffice", "--convert-to", "html", document_path])
+    execute(["libreoffice", "--convert-to", "html", document_path],
+            scan_out_for_err=True)
     markdown_doc = execute(["pandoc", "--columns", conf["linewidth"], "-t", "markdown", intermediate_html])
     markdown_doc = md_cleanup.md_cleanup(markdown_doc)
     intermediate_md = intermediate_html + '.md'
