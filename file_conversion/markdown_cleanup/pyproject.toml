@@ -1,0 +1,10 @@
+[project]
+name = "md_cleanup"
+version = "0.1"
+
+[project.scripts]
+md_cleanup = "md_cleanup:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
