@@ -6,7 +6,10 @@ This script would be better written as a pandoc filter with proper Pandoc
 AST parsing. For lack of time, it is regex-based. Patches welcome :)."""
 
 import re
+import subprocess
 import sys
+
+import pandocfilters
 
 REPLACE_PATTERNS = [
         # strip formatting from inline code blocks, i.e. `foo`{.bar .baz}
@@ -34,6 +37,19 @@ def strip_unwanted_css_from_elements(contents):
         contents = pattern.sub(r"\1", contents)
     return contents
 
+def list_elem_para2plain(key, value, _format, _meta):
+    """Make all list elements "Plain", not "Para", i.e. avoid excessive empty
+    lines."""
+    if not key in ("BulletList", "OrderedList"):
+        return None
+    changed = False
+    for elem in value:
+        if "t" in elem and elem["t"] == 'Para':
+            elem["t"] = "Plain"
+            changed = True
+    if changed:
+        return value
+    return None
 
 def md_cleanup(document):
     """Take a document a s a string and perform all formatting changes defined
@@ -41,6 +57,13 @@ def md_cleanup(document):
     document = strip_nonbreaking_space(document)
     document = strip_unwanted_css_from_elements(document)
     document = strip_divs(document)
+    js_str = subprocess.check_output(["pandoc", "-f", "markdown", "-t", "json"],
+                                     input=document,
+                                     encoding="UTF-8")
+    js_str = pandocfilters.applyJSONFilters((list_elem_para2plain,), js_str)
+    document = subprocess.check_output(["pandoc", "-f", "json", "-t", "markdown"],
+                                     input=js_str,
+                                     encoding="UTF-8")
     return document
 
 def main():

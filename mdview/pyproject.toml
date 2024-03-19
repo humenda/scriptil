@@ -1,6 +1,11 @@
 [project]
 name = "mdview"
 version = "0.1"
+dependencies = [
+    "pandocfilters>=1.5.0",
+]
+
+
 
 [project.scripts]
 md_cleanup = "md_cleanup:main"
