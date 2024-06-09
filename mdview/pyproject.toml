@@ -9,11 +9,11 @@ dependencies = [
 
 [project.scripts]
 md_cleanup = "md_cleanup:main"
-loview = "loview:main"
+mdview = "mdview:main"
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["loview", "md_cleanup"]
+packages = ["mdview", "md_cleanup"]

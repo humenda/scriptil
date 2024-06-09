@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Usage: loview <FILE> -- view a document in any LibreOffice-openable document in vim using pandoc
+"""Usage: mdview <FILE> -- view a document in any LibreOffice-openable document in vim using pandoc
 for Markup preservation.
 
 Author: Sebastian Humenda
@@ -11,10 +11,10 @@ converts to Markdown and views it in Vim.
 By setting the environment variable $EDITOR, you can select your favourite
 editor. Defaults to vim.
 
-There is also a rudimentary configuration (environment) variable called `LOVIEW_CONF`. At the
+There is also a rudimentary configuration (environment) variable called `MDVIEW_CONF`. At the
 moment, the only value that can be specified is `linewidth`. The configuration could look like this:
 
-        LOVIEW_CONF=linewidth:80
+        MDVIEW_CONF=linewidth:80
 
 ToDo:
 
@@ -36,15 +36,15 @@ DEFAULT_CONF = {
     }
 
 def read_config():
-    """Read the configuration from the LOVIEW_CONF variable. Return a dictionary with the parsed
+    """Read the configuration from the MDVIEW_CONF variable. Return a dictionary with the parsed
     values."""
     conf_vals = dict(DEFAULT_CONF)
-    if "LOVIEW_CONF" in os.environ:
-        for item in os.environ["LOVIEW_CONF"].split(","):
+    if "MDVIEW_CONF" in os.environ:
+        for item in os.environ["MDVIEW_CONF"].split(","):
             try:
                 key, val = item.split(":")
             except ValueError:
-                print("Invalid configuration syntax in LOVIEW_CONF environment variable: {item}")
+                print("Invalid configuration syntax in MDVIEW_CONF environment variable: {item}")
                 print("Expected KEY:VALUE")
                 sys.exit(82)
             conf_vals[key] = val

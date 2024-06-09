@@ -13,7 +13,7 @@ Install
 
     $ pipx install .
 
-Loview
+mdview
 =======
 
 
@@ -33,22 +33,22 @@ Python 3, Libreoffice and Pandoc.
 Example Usage
 -------------
 
-    $ loview important_letter.docx
-    $ loview boring_presentation.odp
+    $ mdview important_letter.docx
+    $ mdview boring_presentation.odp
 
 Configuration
 -------------
 
-LOview can be configured by environment variables:
+mdview can be configured by environment variables:
 
 ### `EDITOR`
 
 Set the editor to use. If not set, the editor for viewing the Markdown file will
 be guessed.
 
-### `LOVIEW_CONF`
+### `MDVIEW_CONF`
 
-Set LOview-specific configuration. Keys and values are separated by a colon,
+Set mdview-specific configuration. Keys and values are separated by a colon,
 multiple key/value pairs are separated by commas.
 
 | Key       | Value                         |
