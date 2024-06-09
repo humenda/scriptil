@@ -21,6 +21,7 @@ ToDo:
 -   allow to view the HTML file straight in a (text) browser to preserve tables
 """
 
+import argparse
 import atexit
 import os
 import shlex
@@ -58,7 +59,6 @@ def remove_temporary_files():
     for file in TEMPORARY_FILES:
         try:
             os.remove(file)
-            tmp_dir = os.path.dirname(os.path.abspath(file))
             # Try to remove any images. LO puts them usually right next to the converted files.
             basename = os.path.splitext(os.path.basename(file))[0]
             images = [img for img in os.listdir('.')
@@ -90,6 +90,17 @@ def execute(command, communication=True, scan_out_for_err=False):
         sys.exit(38)
     return text
 
+def spawn_libreoffice(input_file):
+    """Convert the given input file to HTML output."""
+    execute(["libreoffice", "--convert-to", "html", input_file],
+            scan_out_for_err=True)
+
+def spawn_pdftohtml(pdf_file):
+    """Convert the given input file to HTML output using pdftohtml."""
+    # -s: single page
+    # -i: ignore images
+    execute(["pdftohtml", "-s", "-i", "-noframes", "-enc", "UTF-8", "-nodrm", pdf_file])
+
 def get_editor():
     if os.environ.get('EDITOR'):
         return os.environ['EDITOR']
@@ -97,17 +108,30 @@ def get_editor():
         return 'nano'
     return 'vim'
 
+def parse_args():
+    """Parse command-line args, returning a argument object."""
+    parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser.add_argument(
+        '-p',
+        "--pdftohtml",
+        dest="pdftohtml",
+        action="store_true",
+        default=False,
+        help=
+        'if given, use pdftohtml for better markup preservation of PDF documents'
+    )
+    parser.add_argument('input_file', help='input file name')
+    return parser.parse_args()
+
 def main():
     """Script entry point."""
-    if not len(sys.argv) > 1:
-        print("Must provide a file as argument")
-        sys.exit(42)
-
+    args = parse_args()
     atexit.register(remove_temporary_files)
 
     conf = read_config()
 
-    document_path = sys.argv[1]
+    #    ToDo: probably merge with argument parser
+    document_path = args.input_file
     document_dir = os.path.dirname(document_path)
     if document_dir:
         # libreoffice has strange --output-dir rules, change cwd
@@ -115,15 +139,14 @@ def main():
     document_path = os.path.basename(document_path)
 
     basename, extension = os.path.splitext(document_path)
-    intermediate_html = None
-    if len(extension) >= 2 and len(extension) < 5:
-        intermediate_html = f'{basename}.html'
-    else:
-        intermediate_html = f'{basename}.html'
+    intermediate_html = f'{basename}.html'
 
     TEMPORARY_FILES.append(intermediate_html)
-    execute(["libreoffice", "--convert-to", "html", document_path],
-            scan_out_for_err=True)
+    # both programs just add the HTML extension and accept no out parameter
+    if args.pdftohtml:
+        spawn_pdftohtml(document_path)
+    else:
+        spawn_libreoffice(document_path)
     markdown_doc = execute(["pandoc", "--columns", conf["linewidth"], "-t", "markdown", intermediate_html])
     markdown_doc = md_cleanup.md_cleanup(markdown_doc)
     intermediate_md = intermediate_html + '.md'
