@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""A helper to query for standard library functions installed by RustDoc. The
+script will match the name (also lower case) and open the appropriate file.
+
+Example: `rsdoc pathbuf`
+"""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+DOC_ROOT = Path("/home/humenda/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html")
+USAGE = __doc__
+
+
+def ensure_docs() -> None:
+    if DOC_ROOT.is_dir():
+        return
+    subprocess.run(["rustup", "component", "add", "rust-docs"], check=True)
+    if not DOC_ROOT.is_dir():
+        raise SystemExit(f"documentation directory still missing: {DOC_ROOT}")
+
+
+def all_html_files() -> list[Path]:
+    return sorted(p for p in DOC_ROOT.rglob("*.html") if p.is_file())
+
+
+def rank_matches(query: str, files: list[Path]) -> list[Path]:
+    q = query.casefold()
+    exact = []
+    stem = []
+    name = []
+    rel = []
+
+    for path in files:
+        relpath = path.relative_to(DOC_ROOT)
+        name_cf = path.name.casefold()
+        stem_cf = path.stem.casefold()
+        rel_cf = relpath.as_posix().casefold()
+
+        if name_cf == q or rel_cf == q:
+            exact.append(path)
+        elif stem_cf == q:
+            stem.append(path)
+        elif q in name_cf:
+            name.append(path)
+        elif q in rel_cf:
+            rel.append(path)
+
+    return exact or stem or name or rel
+
+
+def choose(paths: list[Path]) -> Path:
+    if not paths:
+        raise SystemExit("no matching documentation found")
+    if len(paths) == 1:
+        return paths[0]
+
+    for i, path in enumerate(paths, 1):
+        print(f"{i:>2}: {path.relative_to(DOC_ROOT)}")
+
+    while True:
+        try:
+            raw = input("Select document: ").strip()
+            idx = int(raw)
+            if 1 <= idx <= len(paths):
+                return paths[idx - 1]
+        except ValueError:
+            pass
+        print("invalid selection")
+
+
+def open_in_w3m(path: Path) -> None:
+    subprocess.run(["w3m", str(path)], check=True)
+
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        raise SystemExit(f"usage: {Path(sys.argv[0]).name} <query>\n{USAGE}")
+
+    ensure_docs()
+    query = sys.argv[1]
+    match = choose(rank_matches(query, all_html_files()))
+    print(query,match)
+    open_in_w3m(match)
+
+
+if __name__ == "__main__":
+    main()
